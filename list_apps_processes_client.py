@@ -21,7 +21,7 @@ def receive_all(sock, size):
     while len(message) < size:
         buffer = sock.recv(size - len(message))
         if not buffer:
-            raise EOFError('Could not receive all expected data!')
+            raise EOFError('Không thể nhận được toàn bộ thông tin cần tìm!')
         message.extend(buffer)
     return bytes(message)
 
@@ -47,9 +47,9 @@ def terminate_process(client, pid):
     client.sendall(bytes(str(pid.get()), "utf8"))
     message = client.recv(BUFFER_SIZE).decode("utf8")
     if "1" in message:
-        tk.messagebox.showinfo(message="Process terminated successfully!")
+        tk.messagebox.showinfo(message="Tiến trình kết thúc thành công!")
     else:
-        tk.messagebox.showerror(message="Error!")
+        tk.messagebox.showerror(message="Lỗi!")
 
 def list_app_proccess(client, tab, s):
     client.sendall(bytes("1", "utf8"))

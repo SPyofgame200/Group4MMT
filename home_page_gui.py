@@ -17,7 +17,9 @@ def create_rounded_button_style():
                     font=("Arial", 20, "bold"),
                     background="transparent")  # Set the background to transparent
     style.map("Rounded.TButton",
-              background=[("active", "transparent")])  # Set active background to transparent
+              background=[("active", "transparent"),
+                          ("pressed", "transparent"),
+                          ("-disabled", "transparent")])
     return style
 
 def get_absolute_path(file_name):
@@ -99,9 +101,3 @@ class HomePageUI(tk.Frame):
             y=260,
         )
         self.disconnect_button.set_image(disconnect_image)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    style = create_rounded_button_style()
-    app = HomePageUI(root)
-    root.mainloop()

