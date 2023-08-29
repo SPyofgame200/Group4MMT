@@ -66,7 +66,7 @@ class LogInPageUI(tk.Frame):
         # Use get_resource_path to get the full path to the image files
         right_image = Image.open(get_resource_path("pbtt.png"))
         # Resize the image to fit within a 50x50 pixel button
-        right_image = right_image.resize((50, 50), Image.ANTIALIAS)
+        right_image = right_image.resize((50, 50), Image.LANCZOS)
         right_image = ImageTk.PhotoImage(right_image)
 
         self.submit_button = tk.Button(

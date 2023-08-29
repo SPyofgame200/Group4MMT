@@ -129,7 +129,7 @@ class AppProcessUI(Frame):
         return button
 
     def configure_buttons(self, parent, client):
-        self.button_process = self.create_button('PROCESS', lambda: switch_display_mode(self.button_process, self.treeview), 80, 460)
+        self.button_process = self.create_button('APPLICATION', lambda: switch_display_mode(self.button_process, self.treeview), 80, 460)
         self.button_list = self.create_button('LIST', lambda: list_app_proccess(client, self.treeview, self.button_process['text']), 80, 520)
         self.button_start = self.create_button('START', lambda: create_start_window(parent, client), 450, 460)
         self.button_kill = self.create_button('KILL', lambda: create_kill_window(parent, client), 450, 520)

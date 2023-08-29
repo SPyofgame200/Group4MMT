@@ -78,7 +78,8 @@ def kill(pid):
             return 0
     except:
         return 0
-    
+
+
 def start(name):
     subprocess.Popen(name)
     return
